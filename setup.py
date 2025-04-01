@@ -1,6 +1,6 @@
 from setuptools import setup
 
-with open('README.txt') as file:
+with open('README.rst',encoding='utf-8') as file:
     long_description = file.read()
 
 setup(name='deepsurv',
@@ -11,7 +11,7 @@ setup(name='deepsurv',
     author='Jared Katzman',
     author_email='jaredleekatzman@gmail.com',
     license='MIT',
-    long_description = long_description,
+    #long_description = long_description,
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
