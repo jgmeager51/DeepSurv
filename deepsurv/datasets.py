@@ -166,3 +166,42 @@ class SimulatedData:
         }
 
         return dataset
+
+
+
+# from deepsurv.datasets import SimulatedData
+
+# Initialize the SimulatedData object
+sim_data = SimulatedData(
+    hr_ratio=2.0,            # Hazard ratio
+    average_death=5,         # Average death time
+    censor_mode='end_time',  # Censoring mode ('end_time' or 'observed_p')
+    end_time=15,             # End time for censoring
+    num_features=10,         # Number of features
+    num_var=2,               # Number of variables affecting risk
+    treatment_group=True     # Include treatment group
+)
+
+# Generate a dataset
+dataset = sim_data.generate_data(
+    N=1000,                  # Number of observations
+    method='gaussian',       # Method for generating risk ('linear' or 'gaussian')
+    gaussian_config={        # Additional parameters for Gaussian risk
+        'c': 0.0,            # Offset for Gaussian function
+        'rad': 0.5           # Scale parameter for Gaussian function
+    }
+)
+type(dataset)
+# Access the generated dataset
+x = dataset['x']  # Covariates (features)
+t = dataset['t']  # Observed time events
+e = dataset['e']  # Censoring indicators (1 = observed, 0 = censored)
+hr = dataset['hr']  # True hazard ratios
+
+# Print some information about the dataset
+print("Covariates (x):", x.shape)
+print("Observed times (t):", t[:5])
+print("Censoring indicators (e):", e[:5])
+print("Hazard ratios (hr):", hr[:5])
+
+print("Type of dataset:", type(dataset))
