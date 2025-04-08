@@ -1,0 +1,1 @@
+{"n_in": 10, "learning_rate": 0.01, "hidden_layers_sizes": [32, 16], "lr_decay": 0.001, "momentum": 0.9, "L2_reg": 0.001, "L1_reg": 0.0, "activation": "relu", "dropout": 0.2, "batch_norm": true, "standardize": true}
