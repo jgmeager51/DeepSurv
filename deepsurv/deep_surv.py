@@ -6,6 +6,8 @@ import time
 import json
 import h5py
 
+import matplotlib.pyplot as plt
+
 import theano
 import theano.tensor as T
 
@@ -635,11 +637,11 @@ class DeepSurv:
         Z = self.predict_risk(data)
 
         if not x_lims is None:
-            x_lims = [np.round(np.min(X)), np.round(np.max(X))]
+            x_lims = [numpy.round(numpy.min(X)), numpy.round(numpy.max(X))]
         if not y_lims is None:
-            y_lims = [np.round(np.min(Y)), np.round(np.max(Y))]
+            y_lims = [numpy.round(numpy.min(Y)), numpy.round(numpy.max(Y))]
         if not c_lims is None:
-            c_lims = [np.round(np.min(Z)), np.round(np.max(Z))]
+            c_lims = [numpy.round(numpy.min(Z)), numpy.round(numpy.max(Z))]
 
         ax = plt.scatter(X,Y, c = Z, edgecolors = 'none', marker = '.')
         ax.set_clim(*c_lims)
