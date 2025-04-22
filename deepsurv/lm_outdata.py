@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from deepsurv_lm import LandmarkDeepSurv
+import tracemalloc
+import time
+
+tracemalloc.start()
+
 
 def load_r_data(file_path):
     """
@@ -44,7 +49,7 @@ def load_r_data(file_path):
 
 def main():
     # Load the r_data.csv dataset
-    file_path = 'r_data.csv'
+    file_path = 'r_data_50.csv'
     data = load_r_data(file_path)
 
     # Split into train/test (80/20)
@@ -70,14 +75,16 @@ def main():
         prediction_window=1.0,  # Prediction window
         hidden_layers_sizes=[32, 32],
         learning_rate=1e-3,
-        dropout=0.5,
+        dropout=0.4,
         batch_norm=True
     )
-
+    start = time.time()
     # Train the model
     print("Training the model...")
-    model.train(train_data, n_epochs=200, verbose=True)
-
+    model.train(train_data, n_epochs=40, batch_size=32, validation_frequency=1,verbose=True)
+    # Print training time
+    print("Training time:")
+    print(time.timer() - start)
     # for landmark_time, logger in model.loggers.items():
     #     print(f"Logs for Landmark Time {landmark_time}:")
     #     print(logger.history)
@@ -92,7 +99,7 @@ def main():
     # Make dynamic predictions for the first test patient
     print("\nMaking dynamic predictions for the first test patient...")
     sample_idx = 0
-    dynamic_preds = model.predict_dynamic(
+    dynamic_preds, _ = model.predict_dynamic(
         test_data['x'][sample_idx:sample_idx+1],  # Baseline for one patient
         test_data['z'][sample_idx:sample_idx+1],  # Longitudinal for one patient
         times=[1.0, 2.0, 3.0]  # Times to predict at
@@ -101,5 +108,69 @@ def main():
     for t, pred in dynamic_preds.items():
         print(f"At t={t:.1f} years: Survival probability = {pred[0]:.2f}")
 
+    __, df_dynamic_pred = model.predict_dynamic(test_data['x'], test_data['z'], times=[1.0, 2.0, 3.0])
+    
+    return model, results, df_dynamic_pred
+
+import matplotlib.pyplot as plt
+
+def plot_metrics(model, results):
+    """
+    Plot training/validation loss, c-index, and Brier score for each landmark time.
+
+    Parameters:
+        model: Trained LandmarkDeepSurv model
+        results: Evaluation results containing c-index and Brier score
+    """
+    # Plot training and validation loss
+    plt.figure(figsize=(12, 6))
+    for landmark_time in model.landmark_times:
+        plt.plot(model.training_loss[landmark_time], label=f"Train Loss (Landmark {landmark_time:.1f})")
+        if landmark_time in model.validation_loss:
+            plt.plot(model.validation_loss[landmark_time], label=f"Valid Loss (Landmark {landmark_time:.1f})", linestyle="--")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Training and Validation Loss at Each Landmark Time")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("loss_plot.png")
+    print("Loss plot saved to 'loss_plot.png'")
+    plt.show()
+
+    # Plot c-index and Brier score
+    c_indices = []
+    brier_scores = []
+    landmark_times = []
+
+    for lm_time, metrics in results.items():
+        landmark_times.append(lm_time)
+        c_indices.append(metrics['c-index'])
+        brier_scores.append(metrics['brier'])
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(landmark_times, c_indices, marker='o', label="C-index")
+    plt.plot(landmark_times, brier_scores, marker='o', label="Brier Score")
+    plt.xlabel("Landmark Time (years)")
+    plt.ylabel("Metric Value")
+    plt.title("C-index and Brier Score at Each Landmark Time")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("metrics_plot.png")
+    print("Metrics plot saved to 'metrics_plot.png'")
+    plt.show()
+
+
+
 if __name__ == "__main__":
-    main()
+    model, results, df_pred = main()
+
+    # Call this function after training and evaluation
+    plot_metrics(model, results)
+
+    predictions_df = pd.DataFrame(df_pred)
+    predictions_df.to_csv("dynamic_predictions.csv", index=False)
+
+current, peak = tracemalloc.get_traced_memory()
+print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+
+tracemalloc.stop()
